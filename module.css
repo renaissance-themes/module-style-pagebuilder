@@ -1,0 +1,1268 @@
+/* Vanilla/blank: Magento_PageBuilder module CSS.
+   Ported from blank's Magento_PageBuilder frontend LESS (source/_module.less,
+   _layout.less, slick/_slick.less, content-type/*, view/base jarallax), with the
+   resolved values read from the compiled pub/static styles-m.css. Collected into
+   the bundle by Vanilla_ThemeBuild's @vanilla-modules directive.
+
+   This file is only the SHARED machinery: slick carousel chrome, the content-type
+   skeleton rules, PB buttons, tabs/accordion, jarallax, full-width page layouts.
+   Per-instance APPEARANCE (margins, paddings, backgrounds, column widths, border
+   radii, flex alignments...) ships inside the page HTML itself as
+   #html-body[data-pb-style='...'] <style> blocks emitted by the PageBuilder
+   renderer; those need nothing from the theme.
+
+   DELIBERATE DEVIATIONS from blank (everything else is value-preserving):
+   - NO ICON FONT: the 'pagebuilder-font' @font-face, .pagebuilder-icon /
+     [class^='pagebuilder-icon-'] font rules and the '\f10x' glyphs are not
+     ported. The slick prev/next arrows render as masked-SVG boxes instead (see
+     the slick arrows section). The bare .pagebuilder-icon-down/-next/-prev/-up
+     utility classes are DROPPED entirely: they are legacy editor-side helpers;
+     nothing in the frontend master format emits them.
+   - NO FLOATS (house rule):
+     * .pagebuilder-full-width { float: left; width: 100% } -> display: block;
+       width: 100% (same in-flow full-width band, no float).
+     * slick: flex track instead of floated slides (see the slick comment block).
+     * the [dir='rtl'] .slick-slide { float: right } rule is dropped with the
+       floats (the flex track follows direction natively).
+     * .slick-track's :before/:after clearfix is dropped (float machinery; a
+       flex track contains its children without it).
+   - jarallax: the IE-only object-fit polyfill hook (font-family:
+     'object-fit: cover;') is dropped; the real object-fit line is kept.
+   - .slick-list.dragging's `cursor: hand` (IE5-era value, invalid and ignored
+     by every modern browser) is dropped; `cursor: pointer` stays.
+   - blank's LESS button mixins extend the selectors into
+     `.cart.table-wrapper .actions-toolbar > .action.pagebuilder-button-*` and
+     `.action-gift.pagebuilder-button-*` (and the same pair inside .slick-dots);
+     those expansions are dropped: real markup never combines the cart/gift
+     action with a pagebuilder-button-* class, and a slick dot is always a
+     <button>. The a/button/div variants are kept verbatim.
+   - the slick arrow :after selectors are dropped: only :before ever gets
+     content in blank; the :after declarations are dead icon-font machinery.
+   - the doubled `.slick-prev:active:active`-style rules (LESS reset artifacts
+     that only restate box-shadow: none) are folded into the single
+     :active/:focus/:not(.primary) block they duplicate.
+   - duplicate declarations inside one compiled rule (the LESS mixin layering on
+     the PB buttons, e.g. padding: 7px 15px overridden by padding: 14px 17px in
+     the same block) are collapsed to the winning value.
+   - -webkit-transform on the jarallax video-overlay pair is written as the
+     standard `transform` (modern browsers alias -webkit-transform to transform,
+     so the rendered result is identical). All other vendor-prefix duplicates of
+     properties whose standard form is in the compiled output are dropped;
+     -webkit-tap-highlight-color / -webkit-touch-callout (no standard form) and
+     -webkit-mask (house mask pattern) are kept. */
+@layer modules {
+
+  /* ===========================================================================
+     Full-width page layouts (_layout.less): the product-full-width /
+     cms-full-width page-layout helpers PageBuilder registers. */
+  .product-full-width-section {
+    padding: 0.5em 0;
+  }
+
+  .product-full-width-section .block.review-add {
+    margin-top: 2.7rem;
+  }
+
+  .page-layout-product-full-width .block.related {
+    margin-top: 2.7rem;
+  }
+
+  .page-main-details .product-section-title {
+    border-bottom: 1px solid #c6c6c6;
+    margin-bottom: 15px;
+    padding-bottom: 12px;
+  }
+
+  .additional-attributes-wrapper .additional-attributes {
+    border: none;
+    width: auto;
+
+    & > tbody > tr > th {
+      border: none;
+      padding: 5.5px 30px 10px 0;
+    }
+
+    & > tbody > tr > td {
+      border: none;
+      padding: 5.5px 5px 10px;
+    }
+  }
+
+  .cms-index-index.page-layout-cms-full-width .nav-sections {
+    margin-bottom: 0;
+  }
+
+  /* ===========================================================================
+     slick carousel (slick/_slick.less). FLOAT-FREE TRANSLATION:
+     blank lays the strip out as a width-set .slick-track with .slick-slide
+     floated left inside it (float: right under [dir='rtl']), plus a
+     :before/:after clearfix on the track. Here the track is a FLEX row instead:
+     same geometry, because slick.js drives all the sizing with inline styles
+     (an explicit pixel width on .slick-track and on every .slick-slide), which
+     flex respects exactly as floats did; the CSS must not fight those inline
+     widths and does not (no flex-grow/shrink games, no width rules). The
+     pre-init hiding stays blank's own display dance: .slick-slide
+     { display: none } until .slick-initialized flips it to block (a flex
+     container blockifies its children anyway, display: none still hides).
+     The clearfix and the rtl float rule are dropped with the floats. */
+  .slick-slider {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    box-sizing: border-box;
+    display: block;
+    position: relative;
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .slick-list {
+    display: block;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+  }
+
+  .slick-list:focus {
+    outline: none;
+  }
+
+  .slick-list.dragging {
+    cursor: pointer;
+  }
+
+  .slick-track {
+    display: flex; /* blank: display: block + floated slides */
+    left: 0;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    top: 0;
+  }
+
+  .slick-loading .slick-track {
+    visibility: hidden;
+  }
+
+  .slick-slide {
+    display: none; /* pre-init; .slick-initialized flips to block (blank-faithful) */
+    height: 100%;
+    min-height: 1px;
+  }
+
+  .slick-slide img {
+    display: block;
+  }
+
+  .slick-slide.slick-loading img {
+    display: none;
+  }
+
+  .slick-slide.dragging img {
+    pointer-events: none;
+  }
+
+  .slick-initialized .slick-slide {
+    display: block;
+  }
+
+  .slick-loading .slick-slide {
+    visibility: hidden;
+  }
+
+  .slick-vertical .slick-slide {
+    border: 1px solid transparent;
+    display: block;
+    height: auto;
+  }
+
+  .slick-slider .slick-track,
+  .slick-slider .slick-list {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .slick-arrow.slick-hidden {
+    display: none;
+  }
+
+  /* ---- prev/next arrows. NO ICON FONT: blank draws the caret as a
+     'pagebuilder-font' glyph on :before (color #555, font-size 38px, hover
+     #494949, padding-right/left 5px). Here the :before is a masked-SVG box:
+     3.8rem square (the 38px glyph em), tinted by background-color, centred in
+     the 60x60 button with flex (blank: display: block + the font line box).
+     The 5px glyph paddings become margin-inline offsets on the mask box.
+     The build emits --icon-pb-caret-prev / --icon-pb-caret-next from
+     web/icons/pb-caret-prev.svg / pb-caret-next.svg (full-em-box 512 viewBox,
+     so `contain` self-sizes the ink like the font glyph). Source order of the
+     hover vs :active/:focus/:not(.primary) blocks is kept verbatim: the
+     trailing :not(.primary) background intentionally outranks :hover's, exactly
+     as in blank's compiled cascade. */
+  .slick-prev {
+    left: 2rem;
+  }
+
+  .slick-prev::before {
+    /* blank pads the glyph 5px on its outer side, but the overflow-hidden
+       icon line clips it: the rendered ink stays dead-centre - measured 2.5px
+       drift when translated as a margin, so no offset is ported */
+    -webkit-mask: var(--icon-pb-caret-prev) center / contain no-repeat;
+    mask: var(--icon-pb-caret-prev) center / contain no-repeat;
+  }
+
+  .slick-next {
+    right: 2rem;
+  }
+
+  .slick-next::before {
+    -webkit-mask: var(--icon-pb-caret-next) center / contain no-repeat;
+    mask: var(--icon-pb-caret-next) center / contain no-repeat;
+  }
+
+  .slick-prev,
+  .slick-next {
+    align-items: center; /* centre the mask box (blank: font line box) */
+    background: rgba(252, 252, 252, 0.6);
+    border: none;
+    border-radius: 0;
+    color: transparent;
+    cursor: pointer;
+    display: flex; /* blank: display: block (glyph-on-a-line) */
+    font-size: 0;
+    height: 60px;
+    justify-content: center;
+    line-height: 0;
+    outline: none;
+    padding: 0;
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+    width: 60px;
+    z-index: 101;
+  }
+
+  .slick-prev.slick-disabled,
+  .slick-next.slick-disabled {
+    opacity: 0.2;
+  }
+
+  .slick-prev:hover,
+  .slick-next:hover {
+    background: #fcfcfc;
+    border: none;
+  }
+
+  .slick-prev:hover.slick-disabled,
+  .slick-next:hover.slick-disabled {
+    opacity: 0.2;
+  }
+
+  .slick-prev:hover::before,
+  .slick-next:hover::before {
+    background-color: #494949; /* blank: glyph color #494949 (@color-gray-darken4) */
+  }
+
+  .slick-prev::before,
+  .slick-next::before {
+    background-color: #555; /* blank: glyph color #555 */
+    content: '';
+    display: block;
+    height: 3.8rem; /* the 38px glyph em box */
+    opacity: 1;
+    width: 3.8rem;
+  }
+
+  .slick-prev:active,
+  .slick-next:active,
+  .slick-prev:focus,
+  .slick-next:focus,
+  .slick-prev:not(.primary),
+  .slick-next:not(.primary) {
+    background: rgba(252, 252, 252, 0.7);
+    border: none;
+    box-shadow: none;
+  }
+
+  /* ---- dots */
+  .slick-dots {
+    font-size: 1.4rem;
+    line-height: normal;
+    letter-spacing: normal;
+    display: block;
+    list-style: none;
+    margin: 0;
+    padding: 15px 0;
+    text-align: center;
+    width: 100%;
+  }
+
+  .slick-dots li {
+    cursor: pointer;
+    display: inline-block;
+    height: 14px;
+    margin: 0 5px;
+    padding: 0;
+    position: relative;
+    vertical-align: middle;
+    width: 14px;
+  }
+
+  .slick-dots li button {
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: none;
+    cursor: pointer;
+    display: block;
+    height: 14px;
+    padding: 0;
+    text-indent: -99999px;
+    transition: background 0.3s, border-color 0.3s; /* scoped: the dot fills on .slick-active, the border darkens on hover (was the bare 0.3s = all) */
+    width: 14px;
+  }
+
+  .slick-dots li button:hover {
+    border: 1px solid #b3b3b3;
+  }
+
+  .slick-dots li button:active,
+  .slick-dots li button:focus,
+  .slick-dots li button:not(.primary) {
+    box-shadow: none;
+  }
+
+  .slick-dots li.slick-active button {
+    background: #1c1918;
+  }
+
+  /* Restore the keyboard focus ring the stock slick chrome strips above: these
+     rules live in @layer modules, which beats the lib's ._keyfocus rescue
+     regardless of specificity, so without this keyboard users get NO indicator
+     on the carousel controls at all. */
+  body._keyfocus .slick-prev:focus,
+  body._keyfocus .slick-next:focus,
+  body._keyfocus .slick-dots li button:focus,
+  body._keyfocus .slick-list:focus {
+    box-shadow: var(--focus-box-shadow);
+  }
+
+  /* ===========================================================================
+     banner content type */
+  [data-content-type='banner'] > [data-element='link'],
+  [data-content-type='banner'] > [data-element='empty_link'] {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  [data-content-type='banner'] > [data-element='link']:hover,
+  [data-content-type='banner'] > [data-element='empty_link']:hover {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  .pagebuilder-banner-wrapper {
+    background-clip: padding-box;
+    border-radius: inherit;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  .pagebuilder-banner-wrapper .pagebuilder-overlay {
+    box-sizing: border-box;
+    padding: 30px;
+    position: relative;
+    transition: background-color 500ms ease;
+  }
+
+  .pagebuilder-banner-wrapper .pagebuilder-overlay.pagebuilder-poster-overlay {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+  }
+
+  .pagebuilder-banner-wrapper .pagebuilder-overlay:not(.pagebuilder-poster-overlay) {
+    max-width: 540px;
+  }
+
+  .pagebuilder-banner-wrapper.jarallax .video-overlay {
+    z-index: 0;
+  }
+
+  .pagebuilder-banner-wrapper [data-element='content'] {
+    min-height: 50px;
+    overflow: auto;
+  }
+
+  .pagebuilder-banner-wrapper .pagebuilder-banner-button {
+    margin: 20px 0 0 0;
+    max-width: 100%;
+    text-align: inherit;
+    transition: opacity 500ms ease;
+    word-break: break-word;
+  }
+
+  .pagebuilder-banner-wrapper .pagebuilder-poster-content {
+    width: 100%;
+  }
+
+  [data-appearance='collage-centered'] .pagebuilder-banner-wrapper .pagebuilder-overlay {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  [data-appearance='collage-left'] .pagebuilder-banner-wrapper .pagebuilder-overlay {
+    margin-right: auto;
+  }
+
+  [data-appearance='collage-right'] .pagebuilder-banner-wrapper .pagebuilder-overlay {
+    margin-left: auto;
+  }
+
+  /* ===========================================================================
+     block content type */
+  [data-content-type$='block'] .block p:last-child {
+    margin-bottom: 1rem;
+    margin-top: 0;
+  }
+
+  /* ===========================================================================
+     buttons content type */
+  [data-content-type='buttons'] {
+    max-width: 100%;
+  }
+
+  [data-content-type='button-item'] {
+    max-width: 100%;
+  }
+
+  [data-content-type='button-item'] [data-element='link'],
+  [data-content-type='button-item'] [data-element='empty_link'] {
+    max-width: 100%;
+    word-wrap: break-word;
+  }
+
+  [data-content-type='button-item'] [data-element='empty_link'] {
+    cursor: default;
+  }
+
+  /* ---- the three PB button skins (large-tier geometry: blank composes
+     .lib-button + .lib-button-l, so padding/font-size land on the 52px CTA
+     tier; the matching lib tokens carry exactly those values) */
+  a.pagebuilder-button-link,
+  button.pagebuilder-button-link,
+  div.pagebuilder-button-link {
+    background: none;
+    border: 0;
+    box-shadow: none;
+    box-sizing: border-box;
+    color: var(--link-color); /* #1979c3 */
+    display: inline-block;
+    font-size: var(--button-font-size-l); /* 1.8rem */
+    font-weight: 600;
+    line-height: 1.42857143;
+    margin: 0 10px 10px 0;
+    padding: var(--button-padding-l); /* 1.4rem 1.7rem = blank's 14px 17px */
+    text-decoration: none;
+  }
+
+  a.pagebuilder-button-link:visited,
+  button.pagebuilder-button-link:visited,
+  div.pagebuilder-button-link:visited {
+    color: var(--link-color); /* #1979c3 */
+    text-decoration: none;
+  }
+
+  a.pagebuilder-button-link:hover,
+  button.pagebuilder-button-link:hover,
+  div.pagebuilder-button-link:hover {
+    color: var(--link-hover-color); /* #006bb4 */
+    text-decoration: underline;
+  }
+
+  a.pagebuilder-button-link:active,
+  button.pagebuilder-button-link:active,
+  div.pagebuilder-button-link:active {
+    color: var(--link-active-color); /* #ff5501 */
+    text-decoration: underline;
+  }
+
+  a.pagebuilder-button-link:hover,
+  button.pagebuilder-button-link:hover,
+  div.pagebuilder-button-link:hover,
+  a.pagebuilder-button-link:active,
+  button.pagebuilder-button-link:active,
+  div.pagebuilder-button-link:active,
+  a.pagebuilder-button-link:focus,
+  button.pagebuilder-button-link:focus,
+  div.pagebuilder-button-link:focus {
+    background: none;
+    border: 0;
+  }
+
+  a.pagebuilder-button-link.disabled,
+  button.pagebuilder-button-link.disabled,
+  div.pagebuilder-button-link.disabled,
+  a.pagebuilder-button-link[disabled],
+  button.pagebuilder-button-link[disabled],
+  div.pagebuilder-button-link[disabled],
+  fieldset[disabled] a.pagebuilder-button-link,
+  fieldset[disabled] button.pagebuilder-button-link,
+  fieldset[disabled] div.pagebuilder-button-link {
+    color: var(--link-color); /* #1979c3 */
+    cursor: default;
+    opacity: 0.5;
+    pointer-events: none;
+    text-decoration: underline;
+  }
+
+  a.pagebuilder-button-primary,
+  button.pagebuilder-button-primary,
+  div.pagebuilder-button-primary {
+    background: var(--theme-color-primary); /* #1979c3 */
+    background-image: none;
+    border: 1px solid var(--theme-color-primary); /* #1979c3 */
+    border-radius: var(--button-border-radius); /* 3px; PB button skins track the button component */
+    box-shadow: none;
+    box-sizing: border-box;
+    color: var(--color-white); /* #fff */
+    cursor: pointer;
+    display: inline-block;
+    font-family: var(--font-family-base); /* 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif */
+    font-size: var(--button-font-size-l); /* 1.8rem */
+    font-weight: 700;
+    line-height: var(--button-line-height-l); /* 2.2rem */
+    margin: 0 10px 10px 0;
+    padding: var(--button-padding-l); /* 1.4rem 1.7rem = blank's 14px 17px */
+    text-decoration: none;
+    vertical-align: middle;
+  }
+
+  a.pagebuilder-button-primary:hover,
+  button.pagebuilder-button-primary:hover,
+  div.pagebuilder-button-primary:hover,
+  a.pagebuilder-button-primary:active,
+  button.pagebuilder-button-primary:active,
+  div.pagebuilder-button-primary:active,
+  a.pagebuilder-button-primary:focus,
+  button.pagebuilder-button-primary:focus,
+  div.pagebuilder-button-primary:focus {
+    text-decoration: none;
+  }
+
+  a.pagebuilder-button-primary:focus,
+  button.pagebuilder-button-primary:focus,
+  div.pagebuilder-button-primary:focus,
+  a.pagebuilder-button-primary:active,
+  button.pagebuilder-button-primary:active,
+  div.pagebuilder-button-primary:active {
+    background: var(--theme-color-primary-alt); /* #006bb4 */
+    border: 1px solid var(--theme-color-primary-alt); /* #006bb4 */
+    color: var(--color-white); /* #fff */
+  }
+
+  a.pagebuilder-button-primary:hover,
+  button.pagebuilder-button-primary:hover,
+  div.pagebuilder-button-primary:hover {
+    background: var(--theme-color-primary-alt); /* #006bb4 */
+    border: 1px solid var(--theme-color-primary-alt); /* #006bb4 */
+    color: var(--color-white); /* #fff */
+  }
+
+  a.pagebuilder-button-primary.disabled,
+  button.pagebuilder-button-primary.disabled,
+  div.pagebuilder-button-primary.disabled,
+  a.pagebuilder-button-primary[disabled],
+  button.pagebuilder-button-primary[disabled],
+  div.pagebuilder-button-primary[disabled],
+  fieldset[disabled] a.pagebuilder-button-primary,
+  fieldset[disabled] button.pagebuilder-button-primary,
+  fieldset[disabled] div.pagebuilder-button-primary {
+    cursor: default;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  a.pagebuilder-button-secondary,
+  button.pagebuilder-button-secondary,
+  div.pagebuilder-button-secondary {
+    background: var(--color-gray95); /* #f2f2f2 */
+    background-image: none;
+    border: 1px solid var(--color-gray-darken2); /* #cdcdcd */
+    border-radius: var(--button-border-radius); /* 3px; PB button skins track the button component */
+    box-shadow: none;
+    box-sizing: border-box;
+    color: var(--color-gray20); /* #333 */
+    cursor: pointer;
+    display: inline-block;
+    font-family: var(--font-family-base); /* 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif */
+    font-size: var(--button-font-size-l); /* 1.8rem */
+    font-weight: 700;
+    line-height: var(--button-line-height-l); /* 2.2rem */
+    margin: 0 10px 10px 0;
+    padding: var(--button-padding-l); /* 1.4rem 1.7rem = blank's 14px 17px */
+    text-decoration: none;
+    vertical-align: middle;
+  }
+
+  a.pagebuilder-button-secondary:hover,
+  button.pagebuilder-button-secondary:hover,
+  div.pagebuilder-button-secondary:hover,
+  a.pagebuilder-button-secondary:active,
+  button.pagebuilder-button-secondary:active,
+  div.pagebuilder-button-secondary:active,
+  a.pagebuilder-button-secondary:focus,
+  button.pagebuilder-button-secondary:focus,
+  div.pagebuilder-button-secondary:focus {
+    text-decoration: none;
+  }
+
+  a.pagebuilder-button-secondary:focus,
+  button.pagebuilder-button-secondary:focus,
+  div.pagebuilder-button-secondary:focus,
+  a.pagebuilder-button-secondary:active,
+  button.pagebuilder-button-secondary:active,
+  div.pagebuilder-button-secondary:active {
+    background: var(--color-gray-darken1); /* #e2e2e2 */
+    border: 1px solid var(--color-gray-darken2); /* #cdcdcd */
+    color: var(--color-gray20); /* #333 */
+  }
+
+  a.pagebuilder-button-secondary:hover,
+  button.pagebuilder-button-secondary:hover,
+  div.pagebuilder-button-secondary:hover {
+    background: var(--color-gray-darken1); /* #e2e2e2 */
+    border: 1px solid var(--color-gray-darken2); /* #cdcdcd */
+    color: var(--color-gray-darken3); /* #555 */
+  }
+
+  a.pagebuilder-button-secondary.disabled,
+  button.pagebuilder-button-secondary.disabled,
+  div.pagebuilder-button-secondary.disabled,
+  a.pagebuilder-button-secondary[disabled],
+  button.pagebuilder-button-secondary[disabled],
+  div.pagebuilder-button-secondary[disabled],
+  fieldset[disabled] a.pagebuilder-button-secondary,
+  fieldset[disabled] button.pagebuilder-button-secondary,
+  fieldset[disabled] div.pagebuilder-button-secondary {
+    cursor: default;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* ===========================================================================
+     column / heading / html / image / map content types */
+  .pagebuilder-column {
+    box-sizing: border-box;
+  }
+
+  [data-content-type='heading'] {
+    word-wrap: break-word;
+  }
+
+  [data-content-type='html'] {
+    word-wrap: break-word;
+  }
+
+  figure[data-content-type='image'] {
+    box-sizing: border-box;
+  }
+
+  figure[data-content-type='image'] > [data-element='link'],
+  figure[data-content-type='image'] > [data-element='link'] img {
+    border-radius: inherit;
+  }
+
+  figure[data-content-type='image'] figcaption {
+    word-wrap: break-word;
+  }
+
+  [data-content-type='map'] {
+    box-sizing: border-box;
+    height: 300px;
+  }
+
+  /* ===========================================================================
+     products content type (grid + carousel appearances) */
+  [data-content-type='row'] li.product-item {
+    text-align: left;
+  }
+
+  .pagebuilder-column .widget-product-grid .product-item {
+    max-width: 100%;
+    min-width: 50px;
+  }
+
+  .pagebuilder-column .widget-product-grid .product-item .price-box {
+    word-wrap: break-word;
+  }
+
+  .pagebuilder-column .widget-product-grid .product-item .price-box .price {
+    white-space: normal;
+  }
+
+  .pagebuilder-column .widget-product-grid .product-item .product-item-actions .actions-primary {
+    display: inline-block;
+    max-width: 100%;
+  }
+
+  .pagebuilder-column .widget-product-grid .product-item .product-item-actions .actions-secondary {
+    display: inline-block;
+    width: auto;
+  }
+
+  .pagebuilder-column .widget-product-grid .product-item .product-item-actions .tocart {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .pagebuilder-column [data-content-type='products'] .block.widget .products-grid .widget-product-grid.product-items .product-item {
+    width: 200px;
+  }
+
+  [data-content-type='products'][data-appearance='carousel'] .slick-initialized li.product-item {
+    display: block;
+  }
+
+  [data-content-type='products'][data-appearance='carousel'] .slick-initialized li.product-item:first-child {
+    visibility: visible;
+  }
+
+  [data-content-type='products'][data-appearance='carousel'] .product-item-info {
+    width: auto;
+  }
+
+  [data-content-type='products'][data-appearance='carousel'] li.product-item {
+    display: none;
+  }
+
+  [data-content-type='products'][data-appearance='carousel'] li.product-item:first-child {
+    display: block;
+    visibility: hidden;
+  }
+
+  [data-content-type='products'][data-appearance='carousel'].center-mode .product-item {
+    opacity: 0.5;
+    transition: opacity 300ms ease; /* scoped: only the center-mode fade animates (was transition: all) */
+  }
+
+  [data-content-type='products'][data-appearance='carousel'].center-mode .product-item:hover {
+    opacity: 1;
+  }
+
+  [data-content-type='products'][data-appearance='carousel'].center-mode .slick-current .product-item {
+    opacity: 1;
+  }
+
+  /* ===========================================================================
+     row content type (contained / full-bleed / full-width) */
+  [data-content-type='row'][data-appearance='contained'] {
+    box-sizing: border-box;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    max-width: var(--layout-max-width); /* 1280px */
+  }
+
+  [data-content-type='row'][data-appearance='contained'] [data-element='inner'] {
+    box-sizing: border-box;
+  }
+
+  [data-content-type='row'][data-appearance='full-bleed'] {
+    box-sizing: border-box;
+  }
+
+  [data-content-type='row'][data-appearance='full-width'] {
+    box-sizing: border-box;
+  }
+
+  [data-content-type='row'][data-appearance='full-width'] > .row-full-width-inner {
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: var(--layout-max-width); /* 1280px */
+    width: 100%;
+  }
+
+  /* ===========================================================================
+     slide content type */
+  [data-content-type='slide'] {
+    box-sizing: border-box;
+    line-height: 20px;
+    min-height: inherit;
+    overflow: hidden;
+  }
+
+  [data-content-type='slide'] > [data-element='link'],
+  [data-content-type='slide'] > [data-element='empty_link'] {
+    color: inherit;
+    min-height: inherit;
+    text-decoration: inherit;
+  }
+
+  [data-content-type='slide'] > [data-element='link']:hover,
+  [data-content-type='slide'] > [data-element='empty_link']:hover {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  [data-content-type='slide'] + [data-content-type='slide'] {
+    height: 0;
+    min-height: 0;
+  }
+
+  .slick-slider [data-content-type='slide'] + [data-content-type='slide'] {
+    height: initial;
+    min-height: inherit;
+  }
+
+  .pagebuilder-slide-wrapper {
+    border-radius: inherit;
+    box-sizing: border-box;
+    min-height: inherit;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  .pagebuilder-slide-wrapper .jarallax-viewport-element {
+    height: 100%;
+    left: -15000vw;
+    position: absolute;
+    top: 0;
+    width: 1px;
+    z-index: 100;
+  }
+
+  .slick-current .pagebuilder-slide-wrapper .jarallax-viewport-element {
+    left: 0;
+  }
+
+  .pagebuilder-slide-wrapper.jarallax .video-overlay {
+    transform: unset; /* blank: -webkit-transform: unset (alias, same effect) */
+    z-index: 1;
+  }
+
+  .pagebuilder-slide-wrapper.jarallax .pagebuilder-overlay {
+    position: relative;
+    z-index: 2;
+  }
+
+  .pagebuilder-slide-wrapper.jarallax [id*='jarallax-container'] > div,
+  .pagebuilder-slide-wrapper.jarallax [id*='jarallax-container'] > img,
+  .pagebuilder-slide-wrapper.jarallax [id*='jarallax-container'] > video,
+  .pagebuilder-slide-wrapper.jarallax [id*='jarallax-container'] > iframe {
+    margin: auto !important;
+    transform: none !important;
+  }
+
+  .pagebuilder-slide-wrapper .pagebuilder-overlay {
+    border-radius: inherit;
+    box-sizing: border-box;
+    padding: 30px;
+    transition: background-color 500ms ease;
+  }
+
+  .pagebuilder-slide-wrapper .pagebuilder-overlay.pagebuilder-poster-overlay {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    min-height: inherit;
+  }
+
+  .pagebuilder-slide-wrapper .pagebuilder-overlay:not(.pagebuilder-poster-overlay) {
+    max-width: 540px;
+  }
+
+  .pagebuilder-slide-wrapper [data-element='content'] {
+    min-height: 50px;
+    overflow: auto;
+  }
+
+  .pagebuilder-slide-wrapper .pagebuilder-slide-button {
+    margin: 20px 0 0 0;
+    max-width: 100%;
+    text-align: inherit;
+    transition: opacity 500ms ease;
+    word-break: break-word;
+  }
+
+  .pagebuilder-slide-wrapper .pagebuilder-poster-content {
+    width: 100%;
+  }
+
+  [data-appearance='collage-centered'] .pagebuilder-slide-wrapper .pagebuilder-overlay {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  [data-appearance='collage-left'] .pagebuilder-slide-wrapper .pagebuilder-overlay {
+    margin-right: auto;
+  }
+
+  [data-appearance='collage-right'] .pagebuilder-slide-wrapper .pagebuilder-overlay {
+    margin-left: auto;
+  }
+
+  /* ===========================================================================
+     slider content type */
+  div[data-content-type='slider'] {
+    visibility: hidden;
+  }
+
+  div[data-content-type='slider'].slick-initialized {
+    visibility: visible;
+  }
+
+  div[data-content-type='slider'] .slick-list,
+  div[data-content-type='slider'] .slick-track,
+  div[data-content-type='slider'] .slick-slide {
+    min-height: inherit;
+  }
+
+  div[data-content-type='slider'] .slick-list > div,
+  div[data-content-type='slider'] .slick-track > div,
+  div[data-content-type='slider'] .slick-slide > div {
+    line-height: 0;
+    min-height: inherit;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  div[data-content-type='slider'] a.button {
+    appearance: button;
+    color: initial;
+    padding: 10px;
+    text-decoration: none;
+  }
+
+  /* ===========================================================================
+     tabs content type */
+  div[data-content-type='tabs'] {
+    & .tabs-navigation {
+      display: block;
+      font-size: 0;
+      margin: 0 0 -1px;
+      padding: 0;
+
+      & li:first-child {
+        margin-left: 0 !important;
+      }
+
+      & li.tab-header {
+        background: #f6f6f6;
+        border: 1px solid #ccc;
+        border-bottom: 0;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        display: inline-block;
+        margin: 0;
+        max-width: 100%;
+        overflow-wrap: break-word;
+        position: relative;
+        word-wrap: break-word;
+        z-index: 1;
+
+        &:not(:first-child) {
+          margin-left: -1px;
+        }
+
+        & a.tab-title {
+          border-right: 0;
+          color: #000;
+          cursor: pointer !important;
+          display: block;
+          font-size: 14px;
+          font-weight: 600;
+          padding: 1.4rem 2rem;
+          position: relative;
+          transition: color 0.3s, background 0.3s; /* scoped (was transition: all; stock PB ships the blanket form, nothing else animates on a tab title) */
+          vertical-align: middle;
+          white-space: normal;
+
+          & span.tab-title {
+            display: block;
+          }
+
+          &:hover {
+            text-decoration: none;
+          }
+        }
+
+        &:last-child {
+          border-right: 1px solid #ccc;
+        }
+
+        &.ui-state-active {
+          background: #fff;
+          z-index: 19;
+
+          & a.tab-title {
+            position: relative;
+            transition: color 0.3s, background 0.3s; /* scoped (was transition: all) */
+          }
+        }
+      }
+    }
+
+    & .tabs-content {
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      overflow: hidden;
+      position: relative;
+      z-index: 9;
+
+      & [data-content-type='tab-item'] {
+        box-sizing: border-box;
+        min-height: inherit;
+
+        &:not(:first-child) {
+          display: none;
+        }
+      }
+    }
+
+    &.tab-align-left .tabs-content {
+      border-top-left-radius: 0 !important;
+    }
+
+    &.tab-align-right .tabs-content {
+      border-top-right-radius: 0 !important;
+    }
+  }
+
+  /* ===========================================================================
+     text / video content types */
+  div[data-content-type='text'] {
+    word-wrap: break-word;
+  }
+
+  div[data-content-type='video'] {
+    font-size: 0;
+  }
+
+  div[data-content-type='video'] .pagebuilder-video-inner {
+    box-sizing: border-box;
+    display: inline-block;
+    width: 100%;
+  }
+
+  div[data-content-type='video'] .pagebuilder-video-container {
+    border-radius: inherit;
+    overflow: hidden;
+    padding-top: 56.25%;
+    position: relative;
+  }
+
+  div[data-content-type='video'] iframe,
+  div[data-content-type='video'] video {
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+  }
+
+  /* ===========================================================================
+     jarallax (parallax background machinery, view/base jarallax LESS).
+     The IE object-fit polyfill hook (font-family: 'object-fit: cover;') is
+     dropped; the standard object-fit line below is the real one. */
+  .jarallax {
+    position: relative;
+    z-index: 0;
+  }
+
+  .jarallax > .jarallax-img {
+    height: 100%;
+    left: 0;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: -1;
+  }
+
+  .jarallax-video-fallback {
+    transform: scale3d(0, 0, 0);
+  }
+
+  .jarallax .video-overlay {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: translate3d(0, 0, 0); /* blank: -webkit-transform (alias, same effect) */
+    z-index: -99;
+  }
+
+  .jarallax [id*='jarallax-container'] video,
+  .jarallax [id*='jarallax-container'] iframe {
+    visibility: hidden;
+  }
+
+  /* ===========================================================================
+     CMS helpers (_module.less common block) */
+  .cms-content-important {
+    background-color: #f5f5f5;
+    color: var(--color-gray20); /* #333 */
+    font-family: var(--font-family-base); /* 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif */
+    font-size: 22px;
+    font-style: normal;
+    font-weight: 300;
+    line-height: 1.1;
+    margin: 0 0 35px -20px;
+    padding: 20px;
+  }
+
+  /* blank: float: left; width: 100% (a full-width float band). Float-free:
+     a block box of the same geometry. */
+  .pagebuilder-full-width {
+    display: block;
+    width: 100%;
+  }
+
+  .pagebuilder-content-type {
+    box-sizing: border-box;
+    margin-bottom: 20px;
+  }
+
+  /* ===========================================================================
+     legacy accordion content type (.lib-data-accordion expansion, compiled
+     output ported as-is; the float: none lines and the content clearfix are
+     blank's own resets, kept verbatim) */
+  .pagebuilder-accordion {
+    margin: 0;
+    padding: 0;
+
+    & > .item.title {
+      box-sizing: border-box;
+      float: none;
+      margin: 0 0 5px;
+      width: 100%;
+
+      & > .switch {
+        background: #f0f0f0;
+        border-bottom: 1px solid #d1d1d1;
+        border-left: 1px solid #d1d1d1;
+        border-right: 1px solid #d1d1d1;
+        border-top: 1px solid #d1d1d1;
+        color: #7d7d7d;
+        display: block;
+        font-size: 1.8rem;
+        font-weight: 600;
+        height: 40px;
+        line-height: 40px;
+        padding: 5px 20px 5px 20px;
+        text-decoration: none;
+      }
+
+      & > .switch:visited {
+        color: #7d7d7d;
+        text-decoration: none;
+      }
+
+      & > .switch:hover {
+        color: #7d7d7d;
+        text-decoration: none;
+      }
+
+      & > .switch:active {
+        color: #333;
+        text-decoration: none;
+      }
+
+      &:not(.disabled) > .switch:focus,
+      &:not(.disabled) > .switch:hover {
+        background: #fcfcfc;
+      }
+
+      &:not(.disabled) > .switch:active,
+      &.active > .switch,
+      &.active > .switch:focus,
+      &.active > .switch:hover {
+        background: #ffffff;
+        color: #333;
+        padding-bottom: 5px;
+        text-decoration: none;
+      }
+    }
+
+    & > .item.content {
+      background: #ffffff;
+      border: 1px solid #d1d1d1;
+      box-sizing: border-box;
+      display: block;
+      float: none;
+      margin: 0 0 5px;
+      padding: 20px 20px 20px 20px;
+
+      &:before,
+      &:after {
+        content: '';
+        display: table;
+      }
+
+      &:after {
+        clear: both;
+      }
+
+      &.active {
+        display: block;
+      }
+    }
+  }
+
+  /* ===========================================================================
+     mobile (below 768px): kill fixed-attachment parallax backgrounds on touch
+     viewports, stack columns, and the mobile visibility helper */
+  @media (--screen-m-max) {
+    .pagebuilder-banner-wrapper {
+      background-attachment: scroll !important;
+    }
+
+    .pagebuilder-banner-wrapper .pagebuilder-overlay:not(.pagebuilder-poster-overlay) {
+      max-width: none;
+    }
+
+    .pagebuilder-column {
+      background-attachment: scroll !important;
+      flex-basis: 100%;
+      max-width: 100%;
+    }
+
+    .pagebuilder-column-group {
+      flex-wrap: wrap;
+    }
+
+    .pagebuilder-column-line {
+      flex-wrap: wrap;
+    }
+
+    [data-content-type='row'][data-appearance='contained'] [data-element='inner'] {
+      background-attachment: scroll !important;
+    }
+
+    [data-content-type='row'][data-appearance='full-bleed'] {
+      background-attachment: scroll !important;
+    }
+
+    [data-content-type='row'][data-appearance='full-width'] {
+      background-attachment: scroll !important;
+    }
+
+    [data-content-type='tab-item'] {
+      background-attachment: scroll !important;
+    }
+
+    .pagebuilder-mobile-hidden {
+      display: none !important;
+    }
+  }
+}
+
+/* Desktop (>=768px): hide mobile-only PB elements. (Formerly module.desktop.css.) */
+@layer modules {
+  @media (--screen-m) {
+    .pagebuilder-mobile-only {
+      display: none !important;
+    }
+  }
+}
